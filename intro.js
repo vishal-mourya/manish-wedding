@@ -732,14 +732,14 @@
   const easeIn  = t => t * t * t;
   const lerp = (a, b, t) => a + (b - a) * t;
 
-  // Phases (start times in seconds) — snappier earth zoom, deeper final approach:
-  // 0.0 — 1.2 : Wide cosmos, caption 1
-  // 1.2 — 2.4 : Warp / hyperjump, caption 2
-  // 2.4 — 4.5 : Approach Earth, rotate India to camera, caption 3
-  // 4.5 — 6.6 : Dive to Surat — cz reaches 108
-  // 6.6 — 7.7 : Push in to Gujarat close-up (cz→105), locator, caption 4
-  // 7.7 — 8.5 : Warm gold flash
-  const TOTAL = 8.5;
+  // Phases (start times in seconds) — slower globe zoom so captions have time to read:
+  // 0.0 —  2.0 : Wide cosmos, caption "Somewhere in the cosmos…"
+  // 2.0 —  4.4 : Warp / hyperjump, caption "On a small blue planet…"
+  // 4.4 —  8.0 : Approach Earth, rotate India, caption "In a corner of Bharat…"
+  // 8.0 — 11.0 : Dive to Surat, caption "On the 1st of March, 2027"
+  // 11.0 — 12.6 : Close-up on Gujarat, caption "Two souls become one."
+  // 12.6 — 13.5 : Warm gold flash → mandap
+  const TOTAL = 13.5;
 
   let startTime = 0;
   let running   = true;
@@ -769,32 +769,32 @@
       // Three.js right-hand Y-rotation moves +Z → +X, so target = origAngle - desiredAngle.
       const ROT_TO_SURAT = -2.805;
 
-      if (elapsed < 1.2) {
-        // Wide cosmos — quick drift in
-        const p = elapsed / 1.2;
+      if (elapsed < 2.0) {
+        // Wide cosmos — slower drift so caption reads
+        const p = elapsed / 2.0;
         cz = lerp(1200, 900, ease(p));
         cx = Math.sin(p * Math.PI) * 40;
         setCaption(0);
         atmoOpacity = 0.6 * p;
-      } else if (elapsed < 2.4) {
-        // Warp jump — fast
-        const p = (elapsed - 1.2) / 1.2;
+      } else if (elapsed < 4.4) {
+        // Warp jump — a bit slower for readability
+        const p = (elapsed - 2.0) / 2.4;
         cz = lerp(900, 380, ease(p));
         warpOpacity = Math.sin(p * Math.PI);
         earthRotY = lerp(0, ROT_TO_SURAT * 0.4, ease(p));
         setCaption(1);
         atmoOpacity = 0.7;
-      } else if (elapsed < 4.5) {
-        // Approach — rotate India into view
-        const p = (elapsed - 2.4) / 2.1;
+      } else if (elapsed < 8.0) {
+        // Approach — rotate India into view (longer so "In a corner of Bharat…" sits with the globe)
+        const p = (elapsed - 4.4) / 3.6;
         cz = lerp(380, 175, easeOut(p));
         earthRotY = lerp(ROT_TO_SURAT * 0.4, ROT_TO_SURAT, easeOut(p));
         setCaption(2);
         atmoOpacity = 0.85;
         lookAtLerp = 0;
-      } else if (elapsed < 6.6) {
+      } else if (elapsed < 11.0) {
         // Dive — camera drops toward Surat & lookAt tracks Surat
-        const p = (elapsed - 4.5) / 2.1;
+        const p = (elapsed - 8.0) / 3.0;
         cz = lerp(175, 122, easeOut(p));
         cy = lerp(0, 40, easeOut(p));
         earthRotY = ROT_TO_SURAT;
@@ -802,9 +802,9 @@
         atmoOpacity = lerp(0.85, 0.4, easeOut(p));
         lookAtLerp = easeOut(p);
         if (locator) locator.classList.add('show');
-      } else if (elapsed < 7.7) {
+      } else if (elapsed < 12.6) {
         // Hold at a sharp-enough distance — Gujarat clearly visible, texture not blurry
-        const p = (elapsed - 6.6) / 1.1;
+        const p = (elapsed - 11.0) / 1.6;
         cz = lerp(122, 118, p);
         cy = 40;
         earthRotY = ROT_TO_SURAT;
@@ -813,7 +813,7 @@
         lookAtLerp = 1;
       } else if (elapsed < TOTAL) {
         // Warm gold flash + gentle push
-        const p = (elapsed - 7.7) / (TOTAL - 7.7);
+        const p = (elapsed - 12.6) / (TOTAL - 12.6);
         cz = lerp(118, 116, p);
         cy = 40;
         earthRotY = ROT_TO_SURAT;

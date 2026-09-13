@@ -2134,10 +2134,15 @@ body.intro-done .replay-intro { display: flex; }
   display: block;
   font-family: "Cormorant Garamond", serif;
   font-style: italic;
-  color: #ffe4a8;
-  font-size: 16px;
-  letter-spacing: .16em;
-  text-shadow: 0 2px 6px rgba(0,0,0,.7);
+  font-weight: 700;
+  color: #fff5d6;
+  font-size: 17px;
+  letter-spacing: .18em;
+  text-shadow:
+    0 0 8px rgba(0, 0, 0, 0.9),
+    0 0 14px rgba(0, 0, 0, 0.85),
+    0 2px 4px rgba(0, 0, 0, 0.95),
+    0 -1px 2px rgba(0, 0, 0, 0.8);
 }
 .mandap-cta {
   position: absolute;
@@ -2207,7 +2212,15 @@ body.intro-done .replay-intro { display: flex; }
   .cd-val         { font-size: clamp(24px, 6.5vw, 30px); }
   .cd-lbl         { font-size: 9px; letter-spacing: .18em; }
   .scroll-indicator { margin-top: 26px; }
-  .ring, .medallion { transform: translate(-50%,-50%) scale(0.75); }
+  /* Shrink Om medallion + rings and position between the two stacked names */
+  .halo-back  { top: 42%; transform: translate(-50%,-50%) scale(0.55); opacity: 0.55; }
+  .ring-1     { top: 42%; transform: translate(-50%,-50%) scale(0.5);  }
+  .ring-2     { top: 42%; transform: translate(-50%,-50%) scale(0.45); }
+  .ring-3     { top: 42%; transform: translate(-50%,-50%) scale(0.4);  }
+  .medallion  { top: 42%; transform: translate(-50%,-50%) scale(0.45); opacity: 0.9; }
+  /* Move stage further back visually so names sit clearly on top */
+  .stage      { z-index: 0; }
+  .hero-content { z-index: 10; }
 
   /* Sections */
   .section        { padding: 70px 16px; }

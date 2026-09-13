@@ -356,56 +356,77 @@
     });
   }
 
-  /* ---------------- Music toggle ---------------- */
+  /* ---------------- Music toggle (real audio file) ---------------- */
   const musicBtn = $('#music-toggle');
   if (musicBtn) {
-    // Uses WebAudio to synth a soft ambient tone — no asset needed.
-    // If you drop an mp3 into the folder later, swap this for an <audio> element.
-    let audioCtx = null;
-    let playing = false;
-    let nodes = [];
-    function startAmbient() {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const master = audioCtx.createGain();
-      master.gain.value = 0.0;
-      master.connect(audioCtx.destination);
-      master.gain.linearRampToValueAtTime(0.06, audioCtx.currentTime + 1.5);
+    // Create/reuse a persistent audio element
+    let audio = document.getElementById('bg-audio');
+    if (!audio) {
+      audio = document.createElement('audio');
+      audio.id = 'bg-audio';
+      audio.src = 'music.mp3';
+      audio.loop = true;
+      audio.preload = 'auto';
+      audio.volume = 0;
+      document.body.appendChild(audio);
+    }
 
-      // Two detuned drones, sitar-ish
-      const freqs = [130.81, 196.00, 261.63]; // C3, G3, C4
-      freqs.forEach((f, i) => {
-        const osc = audioCtx.createOscillator();
-        osc.type = i === 1 ? 'sine' : 'triangle';
-        osc.frequency.value = f;
-        const g = audioCtx.createGain();
-        g.gain.value = 0.15 + i * 0.05;
-        // LFO for subtle shimmer
-        const lfo = audioCtx.createOscillator();
-        lfo.frequency.value = 0.1 + i * 0.05;
-        const lfoGain = audioCtx.createGain();
-        lfoGain.gain.value = 0.5;
-        lfo.connect(lfoGain).connect(osc.frequency);
-        osc.connect(g).connect(master);
-        osc.start();
-        lfo.start();
-        nodes.push(osc, lfo, g);
+    const TARGET_VOL = 0.35;
+    const FADE_MS = 800;
+    let playing = false;
+    let fadeTimer = null;
+
+    function fadeTo(target, done) {
+      clearInterval(fadeTimer);
+      const start = audio.volume;
+      const t0 = performance.now();
+      fadeTimer = setInterval(() => {
+        const t = Math.min(1, (performance.now() - t0) / FADE_MS);
+        audio.volume = start + (target - start) * t;
+        if (t >= 1) {
+          clearInterval(fadeTimer);
+          fadeTimer = null;
+          if (done) done();
+        }
+      }, 30);
+    }
+
+    function play() {
+      audio.play().then(() => {
+        playing = true;
+        musicBtn.classList.add('playing');
+        fadeTo(TARGET_VOL);
+        try { localStorage.setItem('mm-music', '1'); } catch {}
+      }).catch(err => {
+        console.warn('[music] Autoplay blocked; user must click to start:', err);
       });
-      nodes.push(master);
     }
-    function stopAmbient() {
-      if (!audioCtx) return;
-      const master = nodes[nodes.length - 1];
-      master.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.6);
-      setTimeout(() => {
-        try { audioCtx.close(); } catch {}
-        audioCtx = null;
-        nodes = [];
-      }, 800);
+    function pause() {
+      fadeTo(0, () => {
+        audio.pause();
+        playing = false;
+        musicBtn.classList.remove('playing');
+        try { localStorage.setItem('mm-music', '0'); } catch {}
+      });
     }
+
     musicBtn.addEventListener('click', () => {
-      playing = !playing;
-      musicBtn.classList.toggle('playing', playing);
-      if (playing) startAmbient(); else stopAmbient();
+      if (playing) pause(); else play();
+    });
+
+    // Try to resume the user's prior choice; fall back to first user gesture.
+    const wasOn = (() => { try { return localStorage.getItem('mm-music') === '1'; } catch { return false; } })();
+    if (wasOn) {
+      // Modern browsers block programmatic play until user interacts. Attach a one-shot listener.
+      const kick = () => { play(); window.removeEventListener('pointerdown', kick); window.removeEventListener('keydown', kick); };
+      window.addEventListener('pointerdown', kick, { once: true });
+      window.addEventListener('keydown',    kick, { once: true });
+    }
+
+    // Pause when tab is hidden (nice UX), resume when visible
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && playing) audio.pause();
+      else if (!document.hidden && playing) audio.play().catch(()=>{});
     });
   }
 })();
